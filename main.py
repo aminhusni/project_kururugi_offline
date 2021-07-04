@@ -1,6 +1,7 @@
 import datetime
 import pytz
 import os
+import pathlib
 import csv
 import urllib.request
 import pandas as pd
@@ -18,16 +19,27 @@ df = pd.read_csv(url)
 
 last_date_data = df['date'].iloc[-1:].item()
 
+# Get a 7-day rolling dataset to be plotted into the vaccination_rate graph
+df['7_rolling_avg'] = df['total_daily'].rolling(7).mean()
+
 # Plot the graph
-vaccination_rate = px.line(df, x = 'date', y = 'total_daily',  
+# Vaccination rate daily
+vaccination_rate = px.line(df, x = 'date', y = ['total_daily', '7_rolling_avg'],
+                            color_discrete_map={
+                                "total_daily": "#1f822c",
+                                "7_rolling_avg": "#FF9D3C",
+                            },
                             labels={
                                 "date": "",
                                 "total_daily": "Daily doses"
                             },
                             title='Daily Vaccination Rate (Doses)')
 
-vaccination_rate.update_traces(line_color='#1f822c')
+#vaccination_rate.update_traces(line_color='#1f822c')
 
+
+
+# Total vaccination dose (overall)
 vaccinated_total = px.line(df, x = 'date', y = 'total_cumul',
                             labels={
                                 "date": "",
@@ -36,16 +48,19 @@ vaccinated_total = px.line(df, x = 'date', y = 'total_cumul',
                             title='Total Vaccination Dose')
 vaccinated_total.update_traces(line_color='#1f822c')
 
-
+# Calculate the amount of people vaccinated vs unvaccinated
+# Get 1 dose total to date
 single_dose_total = df['dose1_cumul'].iloc[-1:].item()
 population_total = 32764602
+# Get unvaccinated using maths lol #QuickMaths
 unvaccinated = population_total - single_dose_total
 
+# Put the calculations into data frame
 progress_frame = [{'type': 'Vaccinated', 'total': single_dose_total},
                 {'type': 'Unvaccinated', 'total': unvaccinated} 
                     ]
-
 df2 = pd.DataFrame(progress_frame)
+
 # Pie chart
 progress_total = px.pie(df2, title='Vaccination Progress (at least 1 dose)', values='total', names='type', color='type',
                         color_discrete_map={
@@ -54,15 +69,18 @@ progress_total = px.pie(df2, title='Vaccination Progress (at least 1 dose)', val
                         }
                         )
 
+# Get 2 dose total to date
 double_dose_total = df['dose2_cumul'].iloc[-1:].item()
 population_total = 32764602
+# Get unvaccinated using maths again #QuickMaths
 unvaccinated = population_total - double_dose_total
 
+# Put the calculations into data frame
 progress2_frame = [{'type': 'Vaccinated', 'total': double_dose_total},
                 {'type': 'Unvaccinated', 'total': unvaccinated} 
                     ]
-
 df3 = pd.DataFrame(progress2_frame)
+
 # Pie chart
 progress2_total = px.pie(df3, title='Vaccination Progress (2 doses)', values='total', names='type', color='type',
                         color_discrete_map={
@@ -70,7 +88,6 @@ progress2_total = px.pie(df3, title='Vaccination Progress (2 doses)', values='to
                             'Unvaccinated': '#29255f'
                         }
                         )
-
 
 # Convert plotted graph into HTML div
 daily_rate_plot = vaccination_rate.to_html(full_html=False, include_plotlyjs=False)
@@ -112,7 +129,7 @@ state_progress = px.bar(df_trim, x="total_cumul", y="state",
 state_plot = state_progress.to_html(full_html=False, include_plotlyjs=False)
 
 # Crude HTML templates
-HeadTemplate = '<!DOCTYPE html><html> <head><script async src="https://www.googletagmanager.com/gtag/js?id=G-JM59LT7FPT"></script><script>window.dataLayer=window.dataLayer || []; function gtag(){dataLayer.push(arguments);}gtag(\'js\', new Date()); gtag(\'config\', \'G-JM59LT7FPT\');</script> <meta name="viewport" content="width=device-width,initial-scale=1"><meta property="og:image" content="https://kururugi.blob.core.windows.net/kururugi/screenshot.jpg"><meta property="og:title" content="Vaccination Statistics Malaysia"><meta property="og:description" content="Analysis and plotting of the official vaccination statistics data from JKJAV Malaysia"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://kururugi.blob.core.windows.net/kururugi/screenshot.jpg"><meta name="twitter:title" content="Vaccination Statistics Malaysia"><meta name="twitter:description" content="Analysis and plotting of the official vaccination statistics data from JKJAV Malaysia"><style>*{box-sizing: border-box;}.header{padding: 15px;}.row::after{content: ""; clear: both; display: table;}[class*="col-"]{float: left; padding: 20px; border: 1px solid rgb(60, 182, 76);}.col-1{width: 50%;}</style><script type="text/javascript" src="plotly.js"></script> </head> <body style="background-color: #E1E8EB;"> <div class="header">'
+HeadTemplate = open(pathlib.Path(__file__).parent / 'html_header.html', 'r').read()    
 Close = '</div>'
 RowOpen = '<div class="row">'
 ColOpen = '<div class="col-1">'
@@ -124,7 +141,7 @@ with open("index.html", "w") as f:
     f.write("<h1>Vaccination Statistics Malaysia</h1>")
     f.write("<a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>Technical details & about</a><br>Coded by: Amin Husni (aminhusni@gmail.com)<br><br>")
     f.write("Data refreshed: " + current_time + " (MYT)<br>")
-    f.write("Latest date in data: " + last_date_data + "<br>*For mobile, please use horizontal mode (rotate)<br>")
+    f.write("Latest date in data: " + last_date_data + "<br>*For mobile, please use horizontal mode (rotate)<br><br>")
     f.write(Close)
 
     f.write(RowOpen)
@@ -160,7 +177,3 @@ with open("index.html", "w") as f:
     f.write(RowOpen)
     f.write("<br>Licenses: Official datapoint: <a href='https://www.data.gov.my/p/pekeliling-data-terbuka'>Pekeliling Pelaksanaan Data Terbuka Bil.1/2015 (Appendix B)</a>")
     f.write(Close)
-
-
-
-
