@@ -73,10 +73,10 @@ progress2_total = px.pie(df3, title='Vaccination Progress (2 doses)', values='to
 
 
 # Convert plotted graph into HTML div
-daily_rate_plot = vaccination_rate.to_html(full_html=False)
-daily_rate_plot2 = vaccinated_total.to_html(full_html=False)
-progress_plot = progress_total.to_html(full_html=False)
-progress2_plot = progress2_total.to_html(full_html=False)
+daily_rate_plot = vaccination_rate.to_html(full_html=False, include_plotlyjs=False)
+daily_rate_plot2 = vaccinated_total.to_html(full_html=False, include_plotlyjs=False)
+progress_plot = progress_total.to_html(full_html=False, include_plotlyjs=False)
+progress2_plot = progress2_total.to_html(full_html=False, include_plotlyjs=False)
 
 # Generate day name based on date
 df['date'] = pd.to_datetime(df['date'])
@@ -92,7 +92,7 @@ day_trend = px.bar(df, x='day_of_week', y='total_daily',
                     title='Doses administed by day distribution')
 
 # Convert plotted graph into HTML div
-day_trend_plot = day_trend.to_html(full_html=False)
+day_trend_plot = day_trend.to_html(full_html=False, include_plotlyjs=False)
 
 # Get datapoints for per state in Malaysia
 url = "https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv"
@@ -109,10 +109,10 @@ state_progress = px.bar(df_trim, x="total_cumul", y="state",
                         title='Doses administed by state',
 
                         orientation='h')
-state_plot = state_progress.to_html(full_html=False)
+state_plot = state_progress.to_html(full_html=False, include_plotlyjs=False)
 
 # Crude HTML templates
-HeadTemplate = '<!DOCTYPE html><html> <head><script async src="https://www.googletagmanager.com/gtag/js?id=G-JM59LT7FPT"></script><script>window.dataLayer=window.dataLayer || []; function gtag(){dataLayer.push(arguments);}gtag(\'js\', new Date()); gtag(\'config\', \'G-JM59LT7FPT\');</script> <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta property="og:image" content="https://kururugi.blob.core.windows.net/kururugi/screenshot.jpg"/><meta property="og:title" content="Vaccination Statistics Malaysia"/><meta property="og:description" content="Analysis and plotting of the official vaccination statistics data from JKJAV Malaysia"/> <style>*{box-sizing: border-box;}.header{padding: 15px;}.row::after{content: ""; clear: both; display: table;}[class*="col-"]{float: left; padding: 20px; border: 1px solid rgb(60, 182, 76);}.col-1{width: 50%;}</style> </head> <body style="background-color: #E1E8EB;"> <div class="header">'
+HeadTemplate = '<!DOCTYPE html><html> <head><script async src="https://www.googletagmanager.com/gtag/js?id=G-JM59LT7FPT"></script><script>window.dataLayer=window.dataLayer || []; function gtag(){dataLayer.push(arguments);}gtag(\'js\', new Date()); gtag(\'config\', \'G-JM59LT7FPT\');</script> <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta property="og:image" content="https://kururugi.blob.core.windows.net/kururugi/screenshot.jpg"/><meta property="og:title" content="Vaccination Statistics Malaysia"/><meta property="og:description" content="Analysis and plotting of the official vaccination statistics data from JKJAV Malaysia"/> <style>*{box-sizing: border-box;}.header{padding: 15px;}.row::after{content: ""; clear: both; display: table;}[class*="col-"]{float: left; padding: 20px; border: 1px solid rgb(60, 182, 76);}.col-1{width: 50%;}</style><script type="text/javascript" src="plotly.js"></script> </head> <body style="background-color: #E1E8EB;"> <div class="header">'
 Close = '</div>'
 RowOpen = '<div class="row">'
 ColOpen = '<div class="col-1">'
