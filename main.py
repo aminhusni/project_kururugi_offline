@@ -145,6 +145,7 @@ df_trim_pop['unvax2'] = ((df_trim_pop['pop']-df_trim_dose['dose2_cumul'])/df_tri
 state_dose1_pct = px.bar(df_trim_pop.sort_values('vax1_pct'), x=["vax1_pct", "unvax1"], y="state", 
                         labels={
                             "state": "State",
+                            "value": "Percentage"
                         },
                         color_discrete_map={
                             'vax1_pct': '#3cb64c',
@@ -164,6 +165,7 @@ for idx, name in enumerate(series_names):
 state_dose2_pct = px.bar(df_trim_pop.sort_values('vax2_pct'), x=["vax2_pct", "unvax2"], y="state", 
                         labels={
                             "state": "State",
+                            "value": "Percentage"
                         },
                         color_discrete_map={
                             'vax2_pct': '#3cb64c',
