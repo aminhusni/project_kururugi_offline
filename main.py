@@ -48,7 +48,7 @@ vaccination_rate.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'row': 0, 'column': 0}
+                                        domain = {'x': [0.03, 0.35], 'y': [0.60, 0.95]}
 ))
 
 # Make the line labeling nicer
@@ -77,7 +77,7 @@ vaccinated_total.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'row': 0, 'column': 0}
+                                        domain = {'x': [0.02, 0.35], 'y': [0.60, 0.95]}
 ))
 
 
