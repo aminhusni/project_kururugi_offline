@@ -31,25 +31,55 @@ vaccination_rate = px.line(df, x = 'date', y = ['total_daily', '7_rolling_avg'],
                             },
                             labels={
                                 "date": "",
+                                "value": "Doses"
                             },
                             title='Daily Vaccination Rate (Doses)')
 
+vaccination_rate.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['7_rolling_avg'].iloc[-1:].item(),
+                                        number = {'prefix': "Avg "},
+                                        delta = {
+                                            'reference' : df['7_rolling_avg'].iloc[-2].item(),
+                                            "valueformat": ",.0f",
+                                            'increasing.color': "#FF9D3C",
+                                            'decreasing.color': "#FF9D3C",
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'row': 0, 'column': 0}
+))
+
 # Make the line labeling nicer
-series_names = ["Daily doses", "7-day Rolling Avg"]
+series_names = ["Daily doses", "Week Roll Avg"]
 
 for idx, name in enumerate(series_names):
     vaccination_rate.data[idx].name = name
-    vaccination_rate.data[idx].hovertemplate = name
 
 
 # Total vaccination dose (overall)
 vaccinated_total = px.line(df, x = 'date', y = 'total_cumul',
                             labels={
                                 "date": "",
-                                "total_cumul": "Daily doses"
+                                "total_cumul": "Doses to date"
                             },
-                            title='Total Vaccination Dose')
+                            title='Total Vaccination Dose Administered')
 vaccinated_total.update_traces(line_color='#1f822c')
+
+vaccinated_total.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['total_cumul'].iloc[-1:].item(),
+                                        delta = {
+                                            'reference' : df['total_cumul'].iloc[-2].item(),
+                                            "valueformat": ",0f"
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'row': 0, 'column': 0}
+))
+
 
 # Calculate the amount of people vaccinated vs unvaccinated
 # Get 1 dose total to date
@@ -103,7 +133,7 @@ day_trend = px.bar(df, x='day_of_week', y='total_daily',
                         "day_of_week": "",
                         "total_daily": "Total doses administered to date"
                     },
-                    title='Doses administed by day distribution')
+                    title='Doses administered by day distribution')
 day_trend.update_traces(marker_color='#1f822c')
 
 # PER STATE DATA
@@ -116,9 +146,8 @@ df_trim = df_trim.sort_values('total_cumul')
 state_progress = px.bar(df_trim, x="total_cumul", y="state", 
                         labels={
                             "total_cumul": "Doses",
-                            "state": "State",
+                            "state": "States",
                         },
-                        
                         title='Doses administed by state',
 
                         orientation='h')
@@ -144,42 +173,38 @@ df_trim_pop['unvax2'] = ((df_trim_pop['pop']-df_trim_dose['dose2_cumul'])/df_tri
 
 state_dose1_pct = px.bar(df_trim_pop.sort_values('vax1_pct'), x=["vax1_pct", "unvax1"], y="state", 
                         labels={
-                            "state": "State",
+                            "state": "States",
                             "value": "Percentage"
                         },
                         color_discrete_map={
                             'vax1_pct': '#3cb64c',
                             'unvax1': '#29255f'
                             },
-                        title='Percentage vaccinated (1 dose) by state',
+                        title='Percentage vaccinated by state (at least 1 dose)',
                         orientation='h')
 
 # Make the bar labeling nicer
-series_names = ["Vaccinated", "Population"]
-
-for idx, name in enumerate(series_names):
-    state_dose1_pct.data[idx].name = name
-    state_dose1_pct.data[idx].hovertemplate = name
+state_dose1_pct.data[0].name = "Vaccinated"
+state_dose1_pct.data[1].name = "Population"
+state_dose1_pct.data[1].hovertemplate = "Population"
 
 
 state_dose2_pct = px.bar(df_trim_pop.sort_values('vax2_pct'), x=["vax2_pct", "unvax2"], y="state", 
                         labels={
-                            "state": "State",
+                            "state": "States",
                             "value": "Percentage"
                         },
                         color_discrete_map={
                             'vax2_pct': '#3cb64c',
                             'unvax2': '#29255f'
                             },
-                        title='Percentage vaccinated (2 doses) by state',
+                        title='Percentage vaccinated by state (2 doses)',
                         orientation='h')
 
 # Make the bar labeling nicer
-series_names = ["Vaccinated", "Population"]
-
-for idx, name in enumerate(series_names):
-    state_dose2_pct.data[idx].name = name
-    state_dose2_pct.data[idx].hovertemplate = name
+state_dose2_pct.data[0].name = "Vaccinated"
+state_dose2_pct.data[1].name = "Population"
+state_dose2_pct.data[1].hovertemplate = "Population"
 
 # Bar graph showing each state's progress based on percentage (per 100)
 
@@ -213,9 +238,7 @@ with open("index.html", "w") as f:
     f.write(ColOpen)
     f.write(daily_rate_plot)
     f.write(Close)
-
-    #f.write("<h2>Malaysian population: 32,764,602 people<br>Target vaccination (80%): 26,211,682</h2>")
-    
+   
     f.write(ColOpen)
     f.write(daily_rate_plot2)
     f.write(Close)
@@ -249,6 +272,6 @@ with open("index.html", "w") as f:
     f.write(Close)
 
     f.write(RowOpen)
-    f.write("<br>Licenses: Official datapoint: <a href='https://www.data.gov.my/p/pekeliling-data-terbuka'>Pekeliling Pelaksanaan Data Terbuka Bil.1/2015 (Appendix B)</a> <a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>    More & Contact</a><br>")
-    f.write("<a href='https://github.com/aminhusni/project_kururugi/blob/main/LICENSE'>Copyright (C) 2021 Amin Husni. MIT License</a>")
+    f.write("<br>Licenses: Official datapoint: <a href='https://www.data.gov.my/p/pekeliling-data-terbuka'>Pekeliling Pelaksanaan Data Terbuka Bil.1/2015 (Appendix B)</a> <br>")
+    f.write("<a href='https://github.com/aminhusni/project_kururugi/blob/main/LICENSE'>Copyright (C) 2021 Amin Husni. MIT License</a><a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>    More & Contact</a>")
     f.write(Close)
