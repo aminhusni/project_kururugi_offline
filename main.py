@@ -1,8 +1,10 @@
 import datetime
+from pandas.core import series
 import pytz
 import os
 import pathlib
 import csv
+import math
 import urllib.request
 import pandas as pd
 import plotly.express as px
@@ -48,8 +50,37 @@ vaccination_rate.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'x': [0.03, 0.35], 'y': [0.60, 0.95]}
+                                        domain = {'x': [0.03, 0.35], 'y': [0.70, 0.95]}
 ))
+
+vaccination_rate.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['dose1_daily'].iloc[-1:].item(),
+                                        number = {'prefix': "Today 1st Dose "},
+                                        delta = {
+                                            'reference' : df['dose1_daily'].iloc[-2].item(),
+                                            "valueformat": ",.0f",
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'x': [0.03, 0.35], 'y': [0.40, 0.70]}
+))
+
+vaccination_rate.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['dose2_daily'].iloc[-1:].item(),
+                                        number = {'prefix': "Today 2nd Dose "},
+                                        delta = {
+                                            'reference' : df['dose2_daily'].iloc[-2].item(),
+                                            "valueformat": ",.0f",
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'x': [0.03, 0.35], 'y': [0.20, 0.50]}
+))
+
 
 # Make the line labeling nicer
 series_names = ["Daily doses", "Week Roll Avg"]
@@ -59,17 +90,22 @@ for idx, name in enumerate(series_names):
 
 
 # Total vaccination dose (overall)
-vaccinated_total = px.line(df, x = 'date', y = 'total_cumul',
+vaccinated_total = px.line(df, x = 'date', y = ['total_cumul', 'dose1_cumul', 'dose2_cumul'],
+                            color_discrete_map={
+                                "total_cumul": "#1f822c",
+                                "dose1_cumul": "#FF9D3C",
+                                "dose2_cumul": "#29255f",
+                            },
                             labels={
                                 "date": "",
-                                "total_cumul": "Doses to date"
+                                "value": "Doses to date"
                             },
                             title='Total Vaccination Dose Administered')
-vaccinated_total.update_traces(line_color='#1f822c')
 
 vaccinated_total.add_trace(go.Indicator(
                                         mode = "number+delta",
                                         value = df['total_cumul'].iloc[-1:].item(),
+                                        number = {'prefix': "Total: " },
                                         delta = {
                                             'reference' : df['total_cumul'].iloc[-2].item(),
                                             "valueformat": ",0f"
@@ -77,8 +113,45 @@ vaccinated_total.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'x': [0.02, 0.35], 'y': [0.60, 0.95]}
+                                        domain = {'x': [0.05, 0.3], 'y': [0.60, 0.98]}
 ))
+
+vaccinated_total.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['dose1_cumul'].iloc[-1:].item(),
+                                        number = {'prefix': "1st Dose: " },
+                                        delta = {
+                                            'reference' : df['dose1_cumul'].iloc[-2].item(),
+                                            "valueformat": ",.0f",
+                                            'increasing.color': "#FF9D3C",
+                                            'decreasing.color': "#FF9D3C",
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'x': [0.04, 0.3], 'y': [0.37, 0.60]}
+))
+
+vaccinated_total.add_trace(go.Indicator(
+                                        mode = "number+delta",
+                                        value = df['dose2_cumul'].iloc[-1:].item(),
+                                        number = {'prefix': "2nd Dose: " },
+                                        delta = {
+                                            'reference' : df['dose2_cumul'].iloc[-2].item(),
+                                            "valueformat": ",.0f",
+                                            'increasing.color': "#29255f",
+                                            'decreasing.color': "#29255f",
+                                        },
+                                        gauge = {
+                                            'axis': {'visible': False}
+                                        },
+                                        domain = {'x': [0.04, 0.3], 'y': [0.12, 0.5]}
+))
+
+series_names = ['Total Dose', '1st Dose', '2nd Dose']
+
+for idx, name in enumerate(series_names):
+    vaccinated_total.data[idx].name = name
 
 
 # Calculate the amount of people vaccinated vs unvaccinated
@@ -126,14 +199,21 @@ progress2_total = px.pie(df3, title='Vaccination Progress (2 doses)', values='to
 df['date'] = pd.to_datetime(df['date'])
 df['day_of_week'] = df['date'].dt.day_name()
 
+limit = len(df)
+nearest_multiple  = 7 * math.floor(limit/7)
+df_trim_week = df.iloc[:nearest_multiple]
+
+title_graph = "Doses administered by day distribution from " + df_trim_week['date'].iloc[:1].item().strftime('%Y-%m-%d') + " to " + df_trim_week['date'].iloc[-1:].item().strftime('%Y-%m-%d')
+
 # Plot the graph
-day_trend = px.bar(df, x='day_of_week', y='total_daily', 
+day_trend = px.bar(df_trim_week, x='day_of_week', y='total_daily', 
                     category_orders={'day_of_week': ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]},
                     labels={
                         "day_of_week": "",
                         "total_daily": "Total doses administered to date"
                     },
-                    title='Doses administered by day distribution')
+                    title=title_graph
+                    )
 day_trend.update_traces(marker_color='#1f822c')
 
 # PER STATE DATA
@@ -148,7 +228,7 @@ state_progress = px.bar(df_trim, x="total_cumul", y="state",
                             "total_cumul": "Doses",
                             "state": "States",
                         },
-                        title='Doses administed by state',
+                        title='Doses administered by state',
 
                         orientation='h')
 state_progress.update_traces(marker_color='#1f822c')
@@ -228,8 +308,8 @@ FootClose = '</body></html>'
 # Generate the static HTML page
 with open("index.html", "w") as f:
     f.write(HeadTemplate)
-    f.write("<h1>Vaccination Statistics Malaysia</h1>")
-    f.write("<a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>Technical details & about</a><br>Coded by: Amin Husni (aminhusni@gmail.com)<br><br>")
+    f.write("<h1>VACCINATION STATISTICS MALAYSIA</h1>")
+    f.write("<a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>Technical details, data source & about</a><br>Coded by: Amin Husni (aminhusni@gmail.com)<br><br>")
     f.write("Data refreshed: " + current_time + " (MYT)<br>")
     f.write("Latest date in data: " + last_date_data + "<br><br></div>")
     f.write(Close)
