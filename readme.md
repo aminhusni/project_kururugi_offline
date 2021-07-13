@@ -6,6 +6,8 @@
 ## Features
 
 Plotting of the official CTIF vaccination stastistics into readable interpreted graphs and charts. 
+This is the offline version. However, an internet connection is required during the daily generation of the static HTML dashboard. 
+You may deploy this code onto platforms of your choice such as Azure Functions or AWS Lambda. 
 
 ## Online Version
 
