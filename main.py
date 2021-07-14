@@ -10,6 +10,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+population_total = 32657400
+
 # Get the current generation time in MYT timezone
 timeZ_My = pytz.timezone('Asia/Kuala_Lumpur')
 now = datetime.datetime.now(timeZ_My)
@@ -70,7 +72,7 @@ vaccination_rate.add_trace(go.Indicator(
 vaccination_rate.add_trace(go.Indicator(
                                         mode = "number+delta",
                                         value = df['dose2_daily'].iloc[-1:].item(),
-                                        number = {'prefix': "Today 2nd Dose "},
+                                        number = {'prefix': "Today 2nd Dose " },
                                         delta = {
                                             'reference' : df['dose2_daily'].iloc[-2].item(),
                                             "valueformat": ",.0f",
@@ -105,7 +107,7 @@ vaccinated_total = px.line(df, x = 'date', y = ['total_cumul', 'dose1_cumul', 'd
 vaccinated_total.add_trace(go.Indicator(
                                         mode = "number+delta",
                                         value = df['total_cumul'].iloc[-1:].item(),
-                                        number = {'prefix': "Total: " },
+                                        number = {'prefix': "Total " },
                                         delta = {
                                             'reference' : df['total_cumul'].iloc[-2].item(),
                                             "valueformat": ",0f"
@@ -113,13 +115,13 @@ vaccinated_total.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'x': [0.05, 0.3], 'y': [0.60, 0.98]}
+                                        domain = {'x': [0.03, 0.35], 'y': [0.70, 0.95]}
 ))
 
 vaccinated_total.add_trace(go.Indicator(
                                         mode = "number+delta",
                                         value = df['dose1_cumul'].iloc[-1:].item(),
-                                        number = {'prefix': "1st Dose: " },
+                                        number = {'prefix': "1st Dose: "},
                                         delta = {
                                             'reference' : df['dose1_cumul'].iloc[-2].item(),
                                             "valueformat": ",.0f",
@@ -129,7 +131,7 @@ vaccinated_total.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'x': [0.04, 0.3], 'y': [0.37, 0.60]}
+                                        domain = {'x': [0.03, 0.35], 'y': [0.40, 0.70]}
 ))
 
 vaccinated_total.add_trace(go.Indicator(
@@ -145,7 +147,7 @@ vaccinated_total.add_trace(go.Indicator(
                                         gauge = {
                                             'axis': {'visible': False}
                                         },
-                                        domain = {'x': [0.04, 0.3], 'y': [0.12, 0.5]}
+                                        domain = {'x': [0.03, 0.35], 'y': [0.20, 0.50]}
 ))
 
 series_names = ['Total Dose', '1st Dose', '2nd Dose']
@@ -157,7 +159,6 @@ for idx, name in enumerate(series_names):
 # Calculate the amount of people vaccinated vs unvaccinated
 # Get 1 dose total to date
 single_dose_total = df['dose1_cumul'].iloc[-1:].item()
-population_total = 32764602
 # Get unvaccinated using maths lol #QuickMaths
 unvaccinated = population_total - single_dose_total
 
@@ -205,7 +206,7 @@ df_trim_week = df.iloc[:nearest_multiple]
 
 title_graph = "Doses administered by day distribution from " + df_trim_week['date'].iloc[:1].item().strftime('%Y-%m-%d') + " to " + df_trim_week['date'].iloc[-1:].item().strftime('%Y-%m-%d')
 
-# Plot the graph
+# Plot the graph - Total doses administered to date
 day_trend = px.bar(df_trim_week, x='day_of_week', y='total_daily', 
                     category_orders={'day_of_week': ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]},
                     labels={
@@ -245,11 +246,31 @@ df_trim = df.iloc[1:]
 df_trim_pop = df_trim.sort_values('state')
 df_trim_pop = df_trim_pop.reset_index()
 
+# Calculate for Klang Valley (Selangor, KL, Putrajaya)
+kv_pop = df_trim_pop[df_trim_pop['state'].isin(['Selangor', 'W.P. Kuala Lumpur',  'W.P. Putrajaya'])]
+kv_pop = kv_pop.sum(axis=0)
+kv_pop = kv_pop['pop'].item()
+
+kv_dose = df_trim_dose[df_trim_dose['state'].isin(['Selangor', 'W.P. Kuala Lumpur',  'W.P. Putrajaya'])]
+kv_dose = kv_dose.sum(axis=0)
+kv_dose1 = kv_dose['dose1_cumul'].item()
+kv_dose2 = kv_dose['dose2_cumul'].item()
+
+# Insert into existing dataframe to draw the graph (df_trim_pop)
+# Only values used for data representation are calculated & inserted for K.V 
+# Insert Klang Valley into df_trim_pop
+df_trim_pop.loc[-1] = ["17", "Klang Valley*¹", "17", kv_pop, "0", "0"]
+# Insert Klang Valley into df_trim_dose
+df_trim_dose.loc[-1] = ["-1", "today", "Klang Valley*¹", "0", "0", "0", kv_dose1, kv_dose2, kv_dose1+kv_dose2]
+
+#df_trim_pop.loc[-1] = ["17", "Klang Valley", "17", kv_pop, "0", "0", "0", "0"]
+
 # Do some not very quick maths to get vaccinated percentage of each state
 df_trim_pop['vax1_pct'] = (df_trim_dose['dose1_cumul']/df_trim_pop['pop'])*100
 df_trim_pop['vax2_pct'] = (df_trim_dose['dose2_cumul']/df_trim_pop['pop'])*100
 df_trim_pop['unvax1'] = ((df_trim_pop['pop']-df_trim_dose['dose1_cumul'])/df_trim_pop['pop'])*100
 df_trim_pop['unvax2'] = ((df_trim_pop['pop']-df_trim_dose['dose2_cumul'])/df_trim_pop['pop'])*100
+
 
 state_dose1_pct = px.bar(df_trim_pop.sort_values('vax1_pct'), x=["vax1_pct", "unvax1"], y="state", 
                         labels={
@@ -352,6 +373,7 @@ with open("index.html", "w") as f:
     f.write(Close)
 
     f.write(RowOpen)
+    f.write("<br><i>*1 - Klang Valley in this calculation consists of WP Kuala Lumpur, Selangor and Putrajaya</i><br>")
     f.write("<br>Licenses: Official datapoint: <a href='https://www.data.gov.my/p/pekeliling-data-terbuka'>Pekeliling Pelaksanaan Data Terbuka Bil.1/2015 (Appendix B)</a> <br>")
     f.write("<a href='https://github.com/aminhusni/project_kururugi/blob/main/LICENSE'>Copyright (C) 2021 Amin Husni. MIT License</a><a href='https://kururugi.blob.core.windows.net/kururugi/about.html'>    More & Contact</a>")
     f.write(Close)
